@@ -22,7 +22,7 @@ class MyApp extends StatelessWidget{
         primarySwatch: Colors.blue,
         textTheme: GoogleFonts.poppinsTextTheme(Theme.of(context).textTheme),
       ),
-      home: Splash(nextScreen: HomeScreen(), duration: Duration(seconds: 5)),
+      home: Splash(nextScreen: Welcome(), duration: Duration(seconds: 5)),
       debugShowCheckedModeBanner: false,
     );
   }
