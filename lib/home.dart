@@ -1,8 +1,44 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:new_apps/modal.dart';
 
-class HomeScreen extends StatelessWidget {
-  HomeScreen({Key? key}) : super(key: key);
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({Key? key}) : super(key: key);
+
+  _HomeScreenState createState() => _HomeScreenState();
+}
+class _HomeScreenState extends State<HomeScreen>{
+  int _selectedIndex = 0;
+  
+  void _onItemTapped(int index) {
+    switch (index) {
+      case 0:
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => HomeScreen()));
+        break;
+      case 1:
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => ShoppingPage()));
+        break;
+      case 2:
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => CatalogPage()));
+        break;
+      case 3:
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => IntroModal()));
+        break;
+      case 4:
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => SettingsPage()));
+        break;
+    }
+  }
+
+  Future<bool> _onWillPop() async {
+    if (_selectedIndex != 0) {
+      setState(() {
+        _selectedIndex = 0; // Always go back to Home
+      });
+      return false; // Prevent default back behavior
+    }
+    return true; // Exit app if already on Home
+  }
 
   final List<Map<String, dynamic>> transactions = [
     {
@@ -39,7 +75,9 @@ class HomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context){
-    return Scaffold(
+    return WillPopScope(
+      onWillPop: _onWillPop,
+      child: Scaffold(
       body: Stack(children: [
         Positioned(
           top: 0,
@@ -74,7 +112,8 @@ class HomeScreen extends StatelessWidget {
         ),
       ),
       ],)
-      );
+      ),
+    );
   }
 
   Widget _buildAppBar(){
@@ -416,50 +455,100 @@ class HomeScreen extends StatelessWidget {
       ),
     );
   }
-  Widget _buildBottomNavigation(){
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 4,
-            offset: const Offset(0, -2),
+  Widget _buildBottomNavigation() {
+     return Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
           ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildNavItem(Icons.home, 'Home', isSelected: true),
-          _buildNavItem(Icons.shopping_cart, 'Belanja'),
-          _buildNavItem(Icons.description_outlined, 'Katalog'),
-          _buildNavItem(Icons.credit_card, 'Modal'),
-          _buildNavItem(Icons.settings, 'Setting'),
-        ],
-      ),
-    );
-  }
-   Widget _buildNavItem(IconData icon, String label, {bool isSelected = false}) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          icon,
-          color: isSelected ? Colors.blue : Colors.grey,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 10,
+              spreadRadius: 1,
+            ),
+          ],
         ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            color: isSelected ? Colors.blue : Colors.grey,
+        child: ClipRRect(
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+          child: BottomNavigationBar(
+            currentIndex: _selectedIndex,
+            onTap: _onItemTapped,
+            backgroundColor: Colors.white,
+            selectedItemColor: Colors.blue,
+            unselectedItemColor: Colors.grey,
+            showUnselectedLabels: true,
+            type: BottomNavigationBarType.fixed,
+            items: const [
+              BottomNavigationBarItem(
+                icon: Icon(Icons.home, size: 28),
+                label: 'Home',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.shopping_cart, size: 24),
+                label: 'Belanja',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.description_outlined, size: 24),
+                label: 'Katalog',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.credit_card, size: 24),
+                label: 'Modal',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.settings, size: 24),
+                label: 'Pengaturan',
+              ),
+            ],
           ),
         ),
-      ],
-    );
+      );
+    }
+
+  // Widget _buildNavItem(IconData icon, String label, {bool isSelected = false}) {
+  //   return Column(
+  //     mainAxisSize: MainAxisSize.min,
+  //     children: [
+  //       Icon(
+  //         icon,
+  //         color: isSelected ? Colors.blue : Colors.grey,
+  //       ),
+  //       const SizedBox(height: 4),
+  //       Text(
+  //         label,
+  //         style: TextStyle(
+  //           fontSize: 12,
+  //           color: isSelected ? Colors.blue : Colors.grey,
+  //         ),
+  //       ),
+  //     ],
+  //   );
+  // }
+}
+
+class ShoppingPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context){
+    return Center(child: Text("Belanja Page"));
   }
 }
 
+class CatalogPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Center(child: Text('Katalog Page'));
+  }
+}
 
+class SettingsPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Center(child: Text('Settings Page'));
+  }
+}
