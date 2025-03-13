@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:new_apps/register.dart';
 import 'home.dart';
 
 class Login extends StatefulWidget{
@@ -172,7 +173,9 @@ class _LoginState extends State<Login>{
                           borderRadius: BorderRadius.circular(20),
                         ),  
                       ),
-                      onPressed: (){},
+                      onPressed: (){
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => Register()));
+                      },
                       child: Text("Daftar Livin' Merchant"),
                 ),
               ],

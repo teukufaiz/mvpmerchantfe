@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:new_apps/register.dart';
 import '../login.dart';
 
 
@@ -46,7 +47,9 @@ class Welcome extends StatelessWidget {
                       borderRadius: BorderRadius.circular(20),
                     ),  
                   ),
-                  onPressed: (){},
+                  onPressed: (){
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => Register()));
+                  },
                   child: Text("Daftar Livin' Merchant"),
                 ),
                 SizedBox(height: 16),
