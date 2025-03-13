@@ -13,19 +13,19 @@ class _HomeScreenState extends State<HomeScreen>{
   void _onItemTapped(int index) {
     switch (index) {
       case 0:
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => HomeScreen()));
+        Navigator.push(context, MaterialPageRoute(builder: (context) => HomeScreen()));
         break;
       case 1:
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => ShoppingPage()));
+        Navigator.push(context, MaterialPageRoute(builder: (context) => ShoppingPage()));
         break;
       case 2:
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => CatalogPage()));
+        Navigator.push(context, MaterialPageRoute(builder: (context) => CatalogPage()));
         break;
       case 3:
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => IntroModal()));
+        Navigator.push(context, MaterialPageRoute(builder: (context) => IntroModal()));
         break;
       case 4:
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => SettingsPage()));
+        Navigator.push(context, MaterialPageRoute(builder: (context) => SettingsPage()));
         break;
     }
   }
@@ -403,7 +403,7 @@ class _HomeScreenState extends State<HomeScreen>{
             children: [
             Text(
               "Transaksi Terakhir",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             GestureDetector(
               child: const Text(
@@ -418,7 +418,7 @@ class _HomeScreenState extends State<HomeScreen>{
           ],),
           SizedBox(height: 10),
           SizedBox(
-            height: 120, // Set a height based on your design needs
+            height: 180, // Set a height based on your design needs
             child: ListView.builder(
               itemCount: transactions.length,
               itemBuilder: (context, index) {
