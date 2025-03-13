@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:new_apps/home.dart';
+import 'package:new_apps/loan_application.dart';
 
 class IntroModal extends StatelessWidget {
   const IntroModal({Key? key}) : super(key: key);
@@ -233,6 +234,7 @@ class _ModalState extends State<Modal>{
                 child: ElevatedButton(
                   onPressed: () {
                     // Navigate to loan application form
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => LoanApplications()));
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Color(0xFF0C50EF),
@@ -397,7 +399,8 @@ class _ModalState extends State<Modal>{
                 ),
               ),
               TextButton(
-                onPressed: () {},
+                onPressed: () {
+                },
                 child: const Text('Lihat Semua',
                 style: TextStyle(
                   fontSize: 12,
