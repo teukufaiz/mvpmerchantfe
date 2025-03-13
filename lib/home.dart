@@ -1,14 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:new_apps/modal.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 class HomeScreen extends StatefulWidget {
+
   const HomeScreen({Key? key}) : super(key: key);
 
   _HomeScreenState createState() => _HomeScreenState();
 }
 class _HomeScreenState extends State<HomeScreen>{
   int _selectedIndex = 0;
+
+  Map <String, dynamic> userData = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    String? userJson = prefs.getString('userData');
+    if (userJson != null) {
+      setState(() {
+        userData = jsonDecode(userJson);
+      });
+    }
+  }
   
   void _onItemTapped(int index) {
     switch (index) {
@@ -143,20 +164,19 @@ class _HomeScreenState extends State<HomeScreen>{
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // User info (left side)
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
+                  children: [
                     Text(
-                      'RAIHAN ALIFIANTO',
-                      style: TextStyle(
+                      userData['name'] ?? 'Nama Tidak Diketahui',
+                      style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
                       ),
                     ),
-                    SizedBox(height: 4),
-                    Row(
+                    const SizedBox(height: 4),
+                    const Row(
                       children: [
                         Icon(Icons.person, color: Colors.white, size: 14),
                         SizedBox(width: 4),
@@ -229,9 +249,9 @@ class _HomeScreenState extends State<HomeScreen>{
                 // Store details
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
+                  children: [
                     Text(
-                      'Kedai Kopi Beli',
+                      userData['business_name'] ?? 'Nama Toko',
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.w500,
@@ -240,7 +260,7 @@ class _HomeScreenState extends State<HomeScreen>{
                     ),
                     SizedBox(height: 4),
                     Text(
-                      'Jln. Mulu Ga Jadian Jadian',
+                      userData['address'] ?? 'Alamat Toko',
                       style: TextStyle(
                         color: Colors.white70,
                         fontSize: 10,
@@ -510,26 +530,6 @@ class _HomeScreenState extends State<HomeScreen>{
         ),
       );
     }
-
-  // Widget _buildNavItem(IconData icon, String label, {bool isSelected = false}) {
-  //   return Column(
-  //     mainAxisSize: MainAxisSize.min,
-  //     children: [
-  //       Icon(
-  //         icon,
-  //         color: isSelected ? Colors.blue : Colors.grey,
-  //       ),
-  //       const SizedBox(height: 4),
-  //       Text(
-  //         label,
-  //         style: TextStyle(
-  //           fontSize: 12,
-  //           color: isSelected ? Colors.blue : Colors.grey,
-  //         ),
-  //       ),
-  //     ],
-  //   );
-  // }
 }
 
 class ShoppingPage extends StatelessWidget {

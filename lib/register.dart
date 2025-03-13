@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:new_apps/home.dart';
+import 'package:http/http.dart' as http;
+// import 'package:new_apps/home.dart';
 import 'package:new_apps/login.dart';
 
 class Register extends StatefulWidget{
@@ -18,11 +20,60 @@ class _RegisterState extends State<Register>{
   final TextEditingController _shopNameController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
   bool _isPasswordHidden = true;
+  bool _isloading = false;
 
-  void _register(){
-    if(_formKey.currentState!.validate()){
-      Navigator.push(context, MaterialPageRoute(builder: (context) => HomeScreen()));
+  Future<void> _register() async{
+    if (!_formKey.currentState!.validate()){
+      return;
     }
+
+    setState(() {
+      _isloading = true;
+    });
+
+    const String url = "http://127.0.0.1:8000/auth/register";
+
+    final Map<String, String> body = {
+      "phone_number": _phoneController.text,
+      "name": _nameController.text,
+      "password": _passwordController.text,
+      "account_number": _rekeningController.text,
+      "business_name": _shopNameController.text,
+      "address": _addressController.text,
+    };
+
+    try{
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(body),
+      );
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 201) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Registrasi berhasil! Silakan login")),
+        );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => Login()),
+        );
+      } else {
+        // Jika gagal, tampilkan pesan error
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(data["error"] ?? "Terjadi kesalahan")),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Gagal terhubung ke server")),
+      );
+    }
+
+    setState(() {
+      _isloading = false;
+    });
   }
 
 @override
@@ -95,6 +146,8 @@ class _RegisterState extends State<Register>{
                             validator: (value){
                                 if(value == null || value.isEmpty){
                                   return 'Nomor Rekening tidak boleh kosong';
+                                } else if (value.length < 13){
+                                  return 'Nomor Rekening harus minimal 13 digit';
                                 }
                                 return null;
                               },
@@ -262,8 +315,10 @@ class _RegisterState extends State<Register>{
                                   borderRadius: BorderRadius.circular(20),
                                 ),  
                               ),
-                              onPressed: _register,
-                              child: Text("Daftar Livin' Merchant"),
+                              onPressed: _isloading ? null : _register,
+                              child: _isloading
+                              ? CircularProgressIndicator(color: Colors.white)
+                              : Text("Daftar Livin' Merchant"),
                         ),
                         SizedBox(height: 16),
                          Center(

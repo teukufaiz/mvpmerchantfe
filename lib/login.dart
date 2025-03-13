@@ -1,5 +1,9 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:new_apps/register.dart';
+import 'package:http/http.dart' as http;
+import 'package:jwt_decode/jwt_decode.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'register.dart';
 import 'home.dart';
 
 class Login extends StatefulWidget{
@@ -14,12 +18,68 @@ class _LoginState extends State<Login>{
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isPasswordHidden = true;
+  bool _isLoading = false;
+
+  Future<void> saveUserData(Map<String, dynamic> userData) async {
+    final prefs = await SharedPreferences.getInstance();
+    String userJson = jsonEncode(userData);
+    await prefs.setString("userData", userJson);
+  }
   
-  void _login(){
-    if(_formKey.currentState!.validate()){
-      Navigator.push(context, MaterialPageRoute(builder: (context) => HomeScreen()));
+  Future<void> _login() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+
+    final url = Uri.parse("http://127.0.0.1:8000/auth/login");
+    final response = await http.post(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        "phone_number": _phoneController.text,
+        "password": _passwordController.text,
+      }),
+    );
+
+    setState(() {
+      _isLoading = false;
+    });
+
+    if (response.statusCode == 200) {
+      final responseData = jsonDecode(response.body);
+      final String accessToken = responseData['access_token'];
+
+      if (accessToken.isNotEmpty) {
+        Map<String, dynamic> decodedToken = Jwt.parseJwt(accessToken);
+
+        final userData = {
+          "user_id": decodedToken["user_id"],
+          "name": decodedToken["name"],
+          "phone_number": decodedToken["phone_number"],
+          "account_number": decodedToken["account_number"],
+          "business_name": decodedToken["business_name"],
+          "address": decodedToken["address"],
+        };
+
+        await saveUserData(userData);
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => HomeScreen(),
+          ),
+        );
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Login gagal! Periksa kembali nomor dan password."),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
+  
   @override
   Widget build(BuildContext context){
     return Scaffold(
@@ -157,8 +217,8 @@ class _LoginState extends State<Login>{
                           borderRadius: BorderRadius.circular(20),
                         ),  
                       ),
-                      onPressed: _login,
-                      child: Text("Masuk"),
+                      onPressed: _isLoading ? null : _login,
+                      child: _isLoading ? CircularProgressIndicator() : Text("Masuk"),
                     ),
                 SizedBox(height: 16),
                 ElevatedButton(

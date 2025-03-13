@@ -1,8 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:new_apps/createloan.dart';
 import 'package:new_apps/home.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
-class IntroModal extends StatelessWidget {
+class IntroModal extends StatefulWidget  {
   const IntroModal({Key? key}) : super(key: key);
+
+  @override
+  _IntroModalState createState() => _IntroModalState();
+}
+
+class _IntroModalState extends State<IntroModal> {
 
   @override
   Widget build(BuildContext context){
@@ -143,49 +153,115 @@ class Modal extends StatefulWidget{
 
 
 class _ModalState extends State<Modal>{
- // These lists would typically come from your data source
-  late List<LoanApplication> _loanApplications;
-  late List<ActiveLoan> _activeLoans;
-  
+  Map<String, dynamic> ? userData;
+  double totalApprovedLoans = 0;
+  List<dynamic> loans = [];
+
   @override
   void initState() {
     super.initState();
-    // Initialize the data
-    _fetchData();
-  }
-  
-  // Fetch data from your data source
-  void _fetchData() {
-    // In a real app, this would be an API call or database query
-    _loanApplications = _fetchLoanApplications();
-    _activeLoans = _fetchActiveLoans();
-  }
-  
-  // These methods would be replaced with your actual data fetching logic
-  List<LoanApplication> _fetchLoanApplications() {
-    // Return empty list to test empty state
-    return [
-      LoanApplication(amount: '50.000.000', date: '07 Mar 2025, 07:00 WIB', status: 'Diproses'),
-      LoanApplication(amount: '50.000.000', date: '07 Mar 2025, 07:00 WIB', status: 'Diterima'),
-      LoanApplication(amount: '50.000.000', date: '07 Mar 2025, 07:00 WIB', status: 'Ditolak'),
-    ];
-    
-  }
-  
-  List<ActiveLoan> _fetchActiveLoans() {
-    // Return empty list to test empty state
-    return [
-      ActiveLoan(amount: '50.000.000', dueDate: '28 Feb 2025', status: 'Lunas'),
-      ActiveLoan(amount: '50.000.000', dueDate: '05 Mar 2025', status: 'Lunas'),
-      ActiveLoan(amount: '50.000.000', dueDate: '25 Mar 2025', status: 'Proses'),
-    ];
-    
+    _loadUserData();
   }
 
+  Future<void> _loadUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    String? userJson = prefs.getString('userData');
+
+    if (userJson != null) {
+      setState(() {
+        userData = jsonDecode(userJson);
+      });
+
+      fetchLoans();
+      fetchTotalApprovedLoans();
+    }
+  }
+
+  String formatCurrency(double amount) {
+    return "Rp. ${amount.toStringAsFixed(0).replaceAllMapped(
+        RegExp(r'(\d)(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]}.')}";
+  }
+
+  Future<void> fetchLoans() async {
+    int userId = userData!['user_id'];
+    final url = 'http://127.0.0.1:8000/loan/get_loans/$userId';
+
+    try {
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        setState(() {
+          loans = (data['loans'] as List)
+              .map((loan) => LoanApplication.fromJson(loan))
+              .toList();
+        });
+      }
+    } catch (e) {
+      print("Error fetching loans: $e");
+    }
+  }
+
+  Future<void> fetchTotalApprovedLoans() async {
+    int userId = userData!['user_id'];
+    final url = 'http://127.0.0.1:8000/loan/total_approved_loans/$userId';
+
+    try {
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        setState(() {
+          totalApprovedLoans = data['total_approved_loans'];
+        });
+      }
+    } catch (e) {
+      print("Error fetching total approved loans: $e");
+    }
+  }
+
+  Future<void> cancelLoan(int loanId) async {
+    final url = 'http://127.0.0.1:8000/loan/delete_loan/$loanId';
+    try {
+      final response = await http.delete(Uri.parse(url));
+      if (response.statusCode == 200) {
+        print("Loan canceled successfully");
+      } else {
+        print("Failed to cancel loan");
+      }
+    } catch (e) {
+      print("Error canceling loan: $e");
+    }
+  }
+
+  void showCancelDialog(int loanId) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Apakah kamu ingin membatalkan peminjaman?", style: TextStyle(fontWeight: FontWeight.bold)),
+          content: Text("Jika Anda membatalkan pengajuan ini, proses pinjaman tidak akan dilanjutkan. Tindakan ini tidak dapat dibatalkan. Apakah Anda yakin ingin melanjutkan?"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text("Tidak, Kembali", style: TextStyle(color: Colors.blue)),
+            ),
+            TextButton(
+              onPressed: () async {
+                await cancelLoan(loanId);
+                Navigator.pop(context);
+                fetchLoans();
+              },
+              child: Text("Ya, Batalkan", style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        );
+      },
+    );
+  }
   @override
   Widget build(BuildContext context) {
-    // Check if both lists are empty to determine whether to show the illustration
-    final bool showIllustration = _loanApplications.isEmpty && _activeLoans.isEmpty;
+    final bool showIllustration = loans.isEmpty;
     
     return Scaffold(
       appBar: AppBar(
@@ -212,15 +288,8 @@ class _ModalState extends State<Modal>{
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Loan Application Section if we have applications
-                    if (_loanApplications.isNotEmpty)
+                    if (loans.isNotEmpty)
                       _buildLoanApplicationsSection(),
-                    
-                    if (_loanApplications.isNotEmpty)
-                      const SizedBox(height: 24),
-                    
-                    // Active Loans Section if we have active loans
-                    if (_activeLoans.isNotEmpty)
-                      _buildActiveLoansSection(),
                   ],
                 ),
               },
@@ -231,9 +300,19 @@ class _ModalState extends State<Modal>{
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {
-                    // Navigate to loan application form
-                  },
+                  onPressed: () async {
+                  bool? isLoanCreated = await Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => CreateLoanPage(),
+                    ),
+                  );
+
+                  if (isLoanCreated == true) {
+                    // Fetch ulang daftar pinjaman jika ada pinjaman baru
+                    fetchLoans();
+                  }
+                },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Color(0xFF0C50EF),
                     foregroundColor: Colors.white,
@@ -254,9 +333,7 @@ class _ModalState extends State<Modal>{
 
   // Credit Limit Card Widget
   Widget _buildCreditLimitCard() {
-    // You can check if the user has a credit limit or not
-    final bool hasCreditLimit = true; // Replace with your actual condition
-    final String limitAmount = hasCreditLimit ? 'Rp50.000.000' : 'Rp0';
+    final String limitAmount = formatCurrency(totalApprovedLoans);
     final String availableLimit = 'Rp70.000.000';
     
     return Container(
@@ -354,70 +431,69 @@ class _ModalState extends State<Modal>{
                 style: TextStyle(
                   fontSize: 12,
                   color: Colors.blue,
-                  fontWeight: FontWeight.bold                ),),
+                  fontWeight: FontWeight.bold),),
               ),
             ],
           ),
           const SizedBox(height: 8),
-          ..._loanApplications.map((application) {
-            return _buildLoanApplicationItem(application);
-          }).toList(),
+          ...loans.map((loan) {
+            return _buildLoanApplicationItem(loan);
+          }),
         ],
       ),
     );
   }
 
   // Active Loans Section
-  Widget _buildActiveLoansSection() {
-    return Container(
-      margin: EdgeInsets.all(8),
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 6,
-            offset: Offset(0, 3)
-          )
-        ]
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Pinjaman Aktif',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              TextButton(
-                onPressed: () {},
-                child: const Text('Lihat Semua',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.blue,
-                  fontWeight: FontWeight.bold
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          ..._activeLoans.map((loan) {
-            return _buildActiveLoanItem(loan);
-          }).toList(),
-        ],
-      ),
-    );
-  }
+  // Widget _buildActiveLoansSection() {
+  //   return Container(
+  //     margin: EdgeInsets.all(8),
+  //     padding: EdgeInsets.all(16),
+  //     decoration: BoxDecoration(
+  //       color: Colors.white,
+  //       borderRadius: BorderRadius.circular(12),
+  //       boxShadow: [
+  //         BoxShadow(
+  //           color: Colors.black.withOpacity(0.1),
+  //           blurRadius: 6,
+  //           offset: Offset(0, 3)
+  //         )
+  //       ]
+  //     ),
+  //     child: Column(
+  //       crossAxisAlignment: CrossAxisAlignment.start,
+  //       children: [
+  //         Row(
+  //           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //           children: [
+  //             const Text(
+  //               'Pinjaman Aktif',
+  //               style: TextStyle(
+  //                 fontSize: 16,
+  //                 fontWeight: FontWeight.bold,
+  //               ),
+  //             ),
+  //             TextButton(
+  //               onPressed: () {},
+  //               child: const Text('Lihat Semua',
+  //               style: TextStyle(
+  //                 fontSize: 12,
+  //                 color: Colors.blue,
+  //                 fontWeight: FontWeight.bold
+  //                 ),
+  //               ),
+  //             ),
+  //           ],
+  //         ),
+  //         const SizedBox(height: 8),
+  //         ..._activeLoans.map((loan) {
+  //           return _buildActiveLoanItem(loan);
+  //         }).toList(),
+  //       ],
+  //     ),
+  //   );
+  // }
 
-  // Widgets to build individual list items
   Widget _buildLoanApplicationItem(LoanApplication application) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -433,7 +509,8 @@ class _ModalState extends State<Modal>{
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Rp${application.amount}',
+                  formatCurrency(application.amount),
+                  // 'Rp${application.amount}',
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
@@ -456,58 +533,58 @@ class _ModalState extends State<Modal>{
     );
   }
 
-  Widget _buildActiveLoanItem(ActiveLoan loan) {
-    Color statusColor;
-    if (loan.status == 'Lunas') {
-      statusColor = Colors.green;
-    } else if (loan.status == 'Proses') {
-      statusColor = Colors.blue;
-    } else {
-      statusColor = Colors.grey;
-    }
+  // Widget _buildActiveLoanItem(ActiveLoan loan) {
+  //   Color statusColor;
+  //   if (loan.status == 'Lunas') {
+  //     statusColor = Colors.green;
+  //   } else if (loan.status == 'Proses') {
+  //     statusColor = Colors.blue;
+  //   } else {
+  //     statusColor = Colors.grey;
+  //   }
     
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: Colors.grey.shade200),
-        ),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Rp${loan.amount}',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Tenggat waktu: ${loan.dueDate}',
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Text(
-            loan.status,
-            style: TextStyle(
-              color: statusColor,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+    // return Container(
+    //   padding: const EdgeInsets.symmetric(vertical: 12),
+    //   decoration: BoxDecoration(
+    //     border: Border(
+    //       bottom: BorderSide(color: Colors.grey.shade200),
+    //     ),
+    //   ),
+    //   child: Row(
+    //     children: [
+    //       Expanded(
+    //         child: Column(
+    //           crossAxisAlignment: CrossAxisAlignment.start,
+    //           children: [
+    //             Text(
+    //               'Rp${loan.amount}',
+    //               style: const TextStyle(
+    //                 fontWeight: FontWeight.bold,
+    //                 fontSize: 16,
+    //               ),
+    //             ),
+    //             const SizedBox(height: 4),
+    //             Text(
+    //               'Tenggat waktu: ${loan.dueDate}',
+    //               style: TextStyle(
+    //                 color: Colors.grey[600],
+    //                 fontSize: 12,
+    //               ),
+    //             ),
+    //           ],
+    //         ),
+    //       ),
+    //       Text(
+    //         loan.status,
+    //         style: TextStyle(
+    //           color: statusColor,
+    //           fontWeight: FontWeight.bold,
+    //         ),
+    //       ),
+    //     ],
+    //   ),
+    // );
+  // }
 
   Widget _buildStatusIndicator(String status) {
     Color indicatorColor;
@@ -549,17 +626,25 @@ class _ModalState extends State<Modal>{
 }
 
 class LoanApplication {
-  final String amount;
+  final int loanId;
+  final double amount;
+  final String status;
   final String date;
-  final String status;
-  
-  LoanApplication({required this.amount, required this.date, required this.status});
-}
 
-class ActiveLoan {
-  final String amount;
-  final String dueDate;
-  final String status;
-  
-  ActiveLoan({required this.amount, required this.dueDate, required this.status});
+  LoanApplication({
+    required this.loanId,
+    required this.amount,
+    required this.status,
+    required this.date,
+  });
+
+  // Factory untuk parsing dari JSON
+  factory LoanApplication.fromJson(Map<String, dynamic> json) {
+    return LoanApplication(
+      loanId: json['loan_id'],
+      amount: (json['amount'] as num).toDouble(),
+      status: json['status'],
+      date: json['created_at'],
+    );
+  }
 }
