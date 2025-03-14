@@ -44,7 +44,7 @@ class _LoanBusinessDetailState extends State<LoanBusinessDetail> {
       _isLoading = true;
     });
 
-    final url = Uri.parse("http://127.0.0.1:8000/loan/create_loan");
+    final url = Uri.parse("https://merchantbackend-long-shape-7140.fly.dev/loan/create_loan");
     
 
     try {

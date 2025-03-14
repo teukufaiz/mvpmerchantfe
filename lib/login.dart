@@ -31,7 +31,7 @@ class _LoginState extends State<Login>{
 
     setState(() => _isLoading = true);
 
-    final url = Uri.parse("http://127.0.0.1:8000/auth/login");
+    final url = Uri.parse("https://merchantbackend-long-shape-7140.fly.dev/auth/login");
     final response = await http.post(
       url,
       headers: {"Content-Type": "application/json"},

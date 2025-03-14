@@ -31,7 +31,7 @@ class _RegisterState extends State<Register>{
       _isloading = true;
     });
 
-    const String url = "http://127.0.0.1:8000/auth/register";
+    const String url = "https://merchantbackend-long-shape-7140.fly.dev/auth/register";
 
     final Map<String, String> body = {
       "phone_number": _phoneController.text,

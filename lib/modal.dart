@@ -184,7 +184,7 @@ class _ModalState extends State<Modal>{
 
   Future<void> fetchLoans() async {
     int userId = userData!['user_id'];
-    final url = 'http://127.0.0.1:8000/loan/get_loans/$userId';
+    final url = 'https://merchantbackend-long-shape-7140.fly.dev/loan/get_loans/$userId';
 
     try {
       final response = await http.get(Uri.parse(url));
@@ -204,7 +204,7 @@ class _ModalState extends State<Modal>{
 
   Future<void> fetchTotalApprovedLoans() async {
     int userId = userData!['user_id'];
-    final url = 'http://127.0.0.1:8000/loan/total_approved_loans/$userId';
+    final url = 'https://merchantbackend-long-shape-7140.fly.dev/loan/total_approved_loans/$userId';
 
     try {
       final response = await http.get(Uri.parse(url));
@@ -221,7 +221,7 @@ class _ModalState extends State<Modal>{
   }
 
   Future<void> cancelLoan(int loanId, BuildContext context) async {
-    final url = 'http://127.0.0.1:8000/loan/delete_loan/$loanId';
+    final url = 'https://merchantbackend-long-shape-7140.fly.dev/loan/delete_loan/$loanId';
     try {
       final response = await http.delete(Uri.parse(url));
       if (response.statusCode == 200) {
